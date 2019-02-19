@@ -1,5 +1,6 @@
 import networkx as nx
 import numpy as np
+import scipy
 
 # Utilise la matrice d'adjacence pour trouver la transition
 def adjacency_to_transition( row ):
@@ -23,7 +24,7 @@ def page_rank(P):
 # ======================================================
 
 # Chargement du graph
-G = nx.read_edgelist('facebook/0.edges', create_using=nx.DiGraph(),nodetype=int)
+G = nx.read_edgelist('facebook/td.txt', create_using=nx.DiGraph(),nodetype=int)
 
 # Generation de la matrice d'adjacence
 adjacency_matrix = nx.adjacency_matrix(G, nodelist=sorted(G.nodes())).todense()
