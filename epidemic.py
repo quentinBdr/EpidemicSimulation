@@ -42,5 +42,10 @@ print ("\n\n Page Rank : \n", pagerank)
 
 # Simulation Ici hihi
 
+# Initialement
+x = 0.05       # pourcentage d'individus aléatoirement infectés = pourcentage d'individus vaccinés
 
+# Pour chaque itération
+v = 0.2        # probabilité de transmettre l'infection à chaque individu
+gamma = 0.24   # probabilité de guérir de l'infection
 
