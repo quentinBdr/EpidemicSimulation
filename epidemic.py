@@ -1,6 +1,8 @@
 import networkx as nx
 import numpy as np
 import scipy
+from random import randint
+
 
 GRAPH_FILE_PATH = 'facebook/td.txt'
 
@@ -21,12 +23,25 @@ def page_rank(P):
     norm = float(largest.sum())
     return dict(zip(G, map(float, largest / norm)))
 
+def create_infection_vector(G,x):
+    vect = []
+    # creation du vecteur
+    for i in range(0,len(G)):
+        vect.append(randint(0, 1))
+
+    # calcul du nombre de noeuds à infecter
+    percent = len(G) * x
+    if(percent < 1):
+        percent = 1
+
+    return vect
 
 
 # ======================================================
 
-# Chargement du graph
+# Chargement du graphe
 G = nx.read_edgelist(GRAPH_FILE_PATH, create_using=nx.DiGraph(),nodetype=int)
+print("NUMBER OF NODES : ",len(G))
 
 # Generation de la matrice d'adjacence
 adjacency_matrix = nx.adjacency_matrix(G, nodelist=sorted(G.nodes())).todense()
@@ -36,11 +51,11 @@ print("ADJACENCY MATRIX : \n",adjacency_matrix)
 transition_matrix = np.apply_along_axis(adjacency_to_transition, axis=1, arr=adjacency_matrix)
 # on transpose pour qu'elle soit indéxé en colonne et non pas en ligne
 transition_matrix = transition_matrix.transpose()
-print ("\n\nTRANSITION MATRIX : \n",transition_matrix)
+print("\n\nTRANSITION MATRIX : \n",transition_matrix)
 
 # Algo Page Rank
 pagerank = page_rank(transition_matrix)
-print ("\n\n Page Rank : \n", pagerank)
+print("\n\n Page Rank : \n", pagerank)
 
 # Simulation Ici hihi
 
@@ -50,4 +65,6 @@ x = 0.05       # pourcentage d'individus aléatoirement infectés = pourcentage 
 # Pour chaque itération
 v = 0.2        # probabilité de transmettre l'infection à chaque individu
 gamma = 0.24   # probabilité de guérir de l'infection
+
+print("\nINFECTION VECTOR : ",create_infection_vector(G,x))
 
