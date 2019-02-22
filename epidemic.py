@@ -1,10 +1,10 @@
 import networkx as nx
 import numpy as np
 import scipy
-from random import randint
+import random
 
 
-GRAPH_FILE_PATH = 'facebook/td.txt'
+GRAPH_FILE_PATH = 'facebook/0.edges'
 
 # Utilise la matrice d'adjacence pour trouver la transition
 def adjacency_to_transition( row ):
@@ -24,15 +24,19 @@ def page_rank(P):
     return dict(zip(G, map(float, largest / norm)))
 
 def create_infection_vector(G,x):
-    vect = []
-    # creation du vecteur
-    for i in range(0,len(G)):
-        vect.append(randint(0, 1))
 
     # calcul du nombre de noeuds à infecter
-    percent = len(G) * x
-    if(percent < 1):
+    percent = int(len(G) * x)
+    if (percent < 1):
         percent = 1
+
+    # creation du vecteur avec que des 0
+    vect = []
+    for i in range(0,(len(G)-percent)):
+        vect.append(0)
+
+    for i in range(0,percent):
+        vect.insert(random.randint(0,len(G)),1)
 
     return vect
 
@@ -66,5 +70,7 @@ x = 0.05       # pourcentage d'individus aléatoirement infectés = pourcentage 
 v = 0.2        # probabilité de transmettre l'infection à chaque individu
 gamma = 0.24   # probabilité de guérir de l'infection
 
-print("\nINFECTION VECTOR : ",create_infection_vector(G,x))
+print("\nNUMBER OF INFECTED INITIALLY :",int(x*len(G)))
+infect_vect = create_infection_vector(G,x)
+print("INFECTION VECTOR : ",infect_vect)
 
