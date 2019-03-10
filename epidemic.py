@@ -6,7 +6,15 @@ from random import randint
 import matplotlib.pyplot as plt
 
 
-GRAPH_FILE_PATH = 'p2p.txt'
+GRAPH_FILE_PATH = 'Wiki-Vote.txt'
+
+def nb_infected(G):
+    nb=0
+    for j in range(0, len(G)):
+        if G.has_node(j):
+            if int(G.node[j]['infected']) == 1:
+                nb += 1
+    return nb
 
 # Utilise la matrice d'adjacence pour trouver la transition
 def adjacency_to_transition( row ):
@@ -33,22 +41,26 @@ def create_infection_vector(G,x):
 
     # calcul du nombre d'infectés initial
     len_G = len(G)
-    percent = int(len_G * x)
-    if percent < 1:
-        percent = 1
+    nb_to_be_infected = int(len_G * x)
+    if nb_to_be_infected < 1:
+        nb_to_be_infected = 1
+
+    nb_to_be_vaccinated = nb_to_be_infected
 
     # creation du vecteur
     nx.set_node_attributes(G, 0, 'infected')
 
     # ajout des vaccinés selon le résultat de pagerank dans le vecteur
+    a=0
     pagerank = nx.pagerank(G, alpha=0.85)
-    for i in range(0, percent):
+    for i in range(0, nb_to_be_vaccinated):
         maxPage = max(pagerank, key=pagerank.get)
         G.node[maxPage]['infected'] = 2
         pagerank.pop(maxPage)
+        a=i
 
-    # ajout des infectés aléatoirement dans le vecteur
-    for i in range(0,percent):
+    i=0
+    while i < nb_to_be_infected:
         rand = randint(0, len_G - 1)
         if G.has_node(rand):
             if int(G.node[rand]['infected']) == 0:
@@ -57,9 +69,7 @@ def create_infection_vector(G,x):
                 i -= 1
         else:
             i -= 1
-
-
-
+        i += 1
     return G
 
 # ======================================================
@@ -86,7 +96,7 @@ print(nx.info(G))
 
 # Initialisation des paramètres de la simulation
 
-time = 300     # nombre d'itérations de la simulation
+time = 140     # nombre d'itérations de la simulation
 x = 0.05       # pourcentage d'individus aléatoirement infectés initialement = pourcentage d'individus vaccinés initialement
 v = 0.2        # probabilité à chaque itération d'un individu de transmettre l'infection à un voisin
 gamma = 0.15   # probabilité à chaque itération d'un individu de guérir de l'infection
@@ -103,12 +113,7 @@ print("INFECTION VECTOR : ", list(G.nodes(data=True)))
 
 for i in range(0,time):
 
-    nb = 0
-    for j in range(0, len_G):
-        if G.has_node(j):
-            if int(G.node[j]['infected']) == 1:
-                nb += 1
-
+    nb = nb_infected(G)
     t.append(i)
     nb_infect.append(nb)
 
