@@ -27,7 +27,7 @@ def adjacency_to_transition( row ):
     degree=0
     for x in np.nditer(row):
         if x > 0:
-            degree+=1
+            degree += 1
 
     if degree == 0:
         return row
@@ -35,15 +35,40 @@ def adjacency_to_transition( row ):
         return np.divide(row, degree)
 
 
-# Utilise numpy pour trouver le vecteur propre à partir de la matrice de transition
-def page_rank(P):
-    eigenvalues, eigenvectors = np.linalg.eig(P.T)
-    ind = eigenvalues.argsort()
-    largest = np.array(eigenvectors[:, ind[-1]]).flatten().real
-    norm = float(largest.sum())
-    return dict(zip(G, map(float, largest / norm)))
+# Utilise la méthode de la puissance
+# page rank amélioré
+def page_rank(G):
+    limit = 0.00001
+    W = nx.stochastic_graph(G, weight='weight')
+    N = len(W)
+    # vecteur propre
+    # distribution uniform sur le graph
+    x = dict.fromkeys(W, 1.0 / N)
+    # vecteur 1/N --> matrice gout
+    # dans les iterations on peut travailler juste avec un vecteur
+    # distribution uniform
+    p = dict.fromkeys(W, 1.0 / N)
+    dangling_weights = p
+    # les noeuds connecté à personne
+    dangling_nodes = [n for n in W if W.out_degree(n, 'weight') == 0.0]
+    # methode de la puissance
+    for a in range(100000):
+        x_previous = x
+        x = dict.fromkeys(x_previous.keys(), 0)
+        danglesum = 0.85 * sum(x_previous[n] for n in dangling_nodes)
+        for elm in x:
+            # x = alpha * P * x
+            for nbr in W[elm]:
+                x[nbr] += 0.85 * x_previous[elm] * W[elm][nbr]['weight']
+            # x += (1-alpha) * teleportation vector * (1,1, ..., 1)
+            # prise en compte des noeuds "seuls"
+            x[elm] += danglesum * dangling_weights.get(elm, 0) + (1.0 - 0.85) * p.get(elm, 0)
 
-def create_infection_vector(G,x, mode, P):
+        tolerance = sum([abs(x[n] - x_previous[n]) for n in x])
+        if tolerance < N * limit:
+            return x
+
+def create_infection_vector(G,x, mode):
 
     # calcul du nombre d'infectés initial
     len_G = len(G)
@@ -59,8 +84,9 @@ def create_infection_vector(G,x, mode, P):
     # ajout des vaccinés selon le résultat de pagerank dans le vecteur
     if mode == "pagerank":
         print("Pagerank algo enabled")
-        #pagerank = nx.pagerank(G, alpha=0.85, max_iter=100000000)
-        pagerank = page_rank(P)
+        pagerank = page_rank(G)
+        #pagerank = nx.pagerank(G)
+        print(pagerank)
         for i in range(0, nb_to_be_vaccinated):
             maxPage = max(pagerank, key=pagerank.get)
             G.node[maxPage]['infected'] = 2
@@ -87,11 +113,9 @@ def create_infection_vector(G,x, mode, P):
 G = nx.read_edgelist(GRAPH_FILE_PATH, create_using=nx.DiGraph(),nodetype=int)
 print(nx.info(G))
 
-#adjacency_matrix = nx.to_numpy_matrix(G)
-adjacency_matrix = nx.adjacency_matrix(G, nodelist=sorted(G.nodes())).todense()
-
-transition_matrix = np.apply_along_axis(adjacency_to_transition, axis=1, arr=adjacency_matrix)
-transition_matrix = transition_matrix.transpose()
+#adjacency_matrix = nx.adjacency_matrix(G, nodelist=sorted(G.nodes())).todense()
+#transition_matrix = np.apply_along_axis(adjacency_to_transition, axis=1, arr=adjacency_matrix)
+#transition_matrix = transition_matrix.transpose()
 
 
 # Initialisation des paramètres de la simulation
@@ -103,7 +127,7 @@ gamma = 0.24   # probabilité à chaque itération d'un individu de guérir de l
 alpha = 0.8
 delta = 1 - alpha   # probabilité d'infecté un non-voisin
 
-G = create_infection_vector(G, x, "pagerank", transition_matrix)
+G = create_infection_vector(G, x, "pagerank")
 
 nb_infect = []
 times = []
@@ -149,10 +173,11 @@ for i in range(0,time):
                     G.node[non_neighb[rand]]['infected'] = 1
 
     for j in G.nodes():
-        # SE GUERIR SOIS MEME
-        rand = np.random.uniform(0, 1)
-        if rand <= gamma:
-            G.node[j]['infected'] = 0
+        if int(G.node[j]['infected']) == 1:
+            # SE GUERIR SOIS MEME
+            rand = np.random.uniform(0, 1)
+            if rand <= gamma:
+                G.node[j]['infected'] = 0
 
 
 plt.plot(times, nb_infect)
