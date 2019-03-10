@@ -6,7 +6,7 @@ from random import randint
 import matplotlib.pyplot as plt
 
 
-GRAPH_FILE_PATH = 'p2p.txt'
+GRAPH_FILE_PATH = 'Wiki-Vote.txt'
 
 def nb_infected(G):
     nb=0
@@ -43,7 +43,7 @@ def page_rank(P):
     norm = float(largest.sum())
     return dict(zip(G, map(float, largest / norm)))
 
-def create_infection_vector(G,x, mode):
+def create_infection_vector(G,x, mode, P):
 
     # calcul du nombre d'infectés initial
     len_G = len(G)
@@ -59,7 +59,8 @@ def create_infection_vector(G,x, mode):
     # ajout des vaccinés selon le résultat de pagerank dans le vecteur
     if mode == "pagerank":
         print("Pagerank algo enabled")
-        pagerank = nx.pagerank(G, alpha=0.85, max_iter=100000000)
+        #pagerank = nx.pagerank(G, alpha=0.85, max_iter=100000000)
+        pagerank = page_rank(P)
         for i in range(0, nb_to_be_vaccinated):
             maxPage = max(pagerank, key=pagerank.get)
             G.node[maxPage]['infected'] = 2
@@ -86,7 +87,7 @@ def create_infection_vector(G,x, mode):
 G = nx.read_edgelist(GRAPH_FILE_PATH, create_using=nx.DiGraph(),nodetype=int)
 print(nx.info(G))
 
-adjacency_matrix = nx.to_numpy_matrix(G)
+#adjacency_matrix = nx.to_numpy_matrix(G)
 adjacency_matrix = nx.adjacency_matrix(G, nodelist=sorted(G.nodes())).todense()
 
 transition_matrix = np.apply_along_axis(adjacency_to_transition, axis=1, arr=adjacency_matrix)
@@ -102,7 +103,7 @@ gamma = 0.24   # probabilité à chaque itération d'un individu de guérir de l
 alpha = 0.8
 delta = 1 - alpha   # probabilité d'infecté un non-voisin
 
-G = create_infection_vector(G, x, "normal")
+G = create_infection_vector(G, x, "pagerank", transition_matrix)
 
 nb_infect = []
 times = []
