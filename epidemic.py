@@ -6,7 +6,7 @@ from random import randint
 import matplotlib.pyplot as plt
 
 
-GRAPH_FILE_PATH = 'Wiki-Vote.txt'
+GRAPH_FILE_PATH = 'p2p.txt'
 
 # Utilise la matrice d'adjacence pour trouver la transition
 def adjacency_to_transition( row ):
@@ -30,14 +30,22 @@ def page_rank(P):
     return dict(zip(G, map(float, largest / norm)))
 
 def create_infection_vector(G,x):
+
     # calcul du nombre d'infectés initial
     len_G = len(G)
     percent = int(len_G * x)
-    if (percent < 1):
+    if percent < 1:
         percent = 1
 
     # creation du vecteur
     nx.set_node_attributes(G, 0, 'infected')
+
+    # ajout des vaccinés selon le résultat de pagerank dans le vecteur
+    pagerank = nx.pagerank(G, alpha=0.85)
+    for i in range(0, percent):
+        maxPage = max(pagerank, key=pagerank.get)
+        G.node[maxPage]['infected'] = 2
+        pagerank.pop(maxPage)
 
     # ajout des infectés aléatoirement dans le vecteur
     for i in range(0,percent):
@@ -49,6 +57,8 @@ def create_infection_vector(G,x):
                 i -= 1
         else:
             i -= 1
+
+
 
     return G
 
@@ -76,11 +86,11 @@ print(nx.info(G))
 
 # Initialisation des paramètres de la simulation
 
-time = 100     # nombre d'itérations de la simulation
+time = 300     # nombre d'itérations de la simulation
 x = 0.05       # pourcentage d'individus aléatoirement infectés initialement = pourcentage d'individus vaccinés initialement
-v = 0.2        # probabilité à chaque itération d'un individu de transmettre l'infection à un  voisin
-gamma = 0.05   # probabilité à chaque itération d'un individu de guérir de l'infection
-alpha = 0.85
+v = 0.2        # probabilité à chaque itération d'un individu de transmettre l'infection à un voisin
+gamma = 0.15   # probabilité à chaque itération d'un individu de guérir de l'infection
+alpha = 0.8
 delta = 1 - alpha
 
 G = create_infection_vector(G,x)
@@ -103,7 +113,7 @@ for i in range(0,time):
     nb_infect.append(nb)
 
     print('-------- ITERATION ',i, '--------')
-    #print("NB INFECTED : ", nb)
+    print("NB INFECTED : ", nb)
 
     for j in range(0, len_G):
         if G.has_node(j):
@@ -117,16 +127,16 @@ for i in range(0,time):
                 if len(neighb) > 0:
                     for k in list(neighb):
                         rand = random.uniform(0, 1)
-                        if(rand <= v and int(G.node[k]['infected']) == 0): # probabilité d'infecter un voisin sain
+                        if rand <= v and int(G.node[k]['infected']) < 1: # probabilité d'infecter un voisin sain non vacciné
                             #print("    NODE ",k," HAS BEEN INFECTED")
                             G.node[k]['infected'] == 1
 
-                rand = random.uniform(0, 1)
-                non_neighb = list(set(G.nodes) - set(neighb) - {j})
-                #print("NON VOISINS DE ", j, " : ", non_neighb)
+                rand = random.uniform(0, 1) # proba d'infecter des non-voisins
+                non_neighb = list(set(G.nodes) - set(neighb) - {j}) # non-voisins du noeud
                 if rand <= delta:
                     rand = randint(0, len(non_neighb) - 1)
-                    G.node[non_neighb[rand]]['infected'] = 1
+                    if G.node[non_neighb[rand]]['infected'] < 2:
+                        G.node[non_neighb[rand]]['infected'] = 1
                     #print("NON VOISIN ", non_neighb[rand], " INFECTE")
 
 plt.plot(t, nb_infect)
